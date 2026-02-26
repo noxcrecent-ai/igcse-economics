@@ -1,16 +1,22 @@
 export async function POST(req) {
-  const { question, markScheme, answer, marks } = await req.json()
+  const { question, answer, markScheme, marks, topic } = await req.json()
 
-  const prompt = `You are an IGCSE Economics examiner for Cambridge 0455.
+  const prompt = `You are a strict Cambridge IGCSE Economics 0455 examiner.
 
+Topic: ${topic || 'Economics'}
 Question: ${question}
-Total marks: ${marks}
-Mark Scheme: ${markScheme}
-Student's Answer: ${answer}
+Marks available: ${marks}
+Mark Scheme: ${markScheme || 'Grade based on economics knowledge'}
+Student Answer: ${answer}
 
-Grade this answer strictly according to the mark scheme. Reply with only these two lines:
-SCORE: [number]
-FEEDBACK: [detailed feedback]`
+Grade this answer strictly using the mark scheme. 
+- Award marks only for correct economic points
+- Be specific about what was good and what was missing
+- Reference the mark scheme in your feedback
+
+Respond in this exact format:
+SCORE: X
+FEEDBACK: your detailed feedback here explaining marks awarded and lost`
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -21,7 +27,8 @@ FEEDBACK: [detailed feedback]`
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: prompt }],
-      temperature: 0.3
+      temperature: 0.2,
+      max_tokens: 1000
     })
   })
 
@@ -29,10 +36,10 @@ FEEDBACK: [detailed feedback]`
   const text = data.choices?.[0]?.message?.content || ''
 
   const scoreMatch = text.match(/SCORE:\s*(\d+)/)
-  const feedbackMatch = text.match(/FEEDBACK:\s*([\s\S]+)/i)
+  const feedbackMatch = text.match(/FEEDBACK:\s*([\s\S]+)/)
 
   return Response.json({
-    score: scoreMatch ? scoreMatch[1] : '?',
+    score: scoreMatch ? parseInt(scoreMatch[1]) : 0,
     feedback: feedbackMatch ? feedbackMatch[1].trim() : text
   })
 }

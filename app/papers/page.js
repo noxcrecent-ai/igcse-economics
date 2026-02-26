@@ -1,86 +1,291 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { FileText, ArrowLeft, CheckCircle, Loader, BookOpen } from 'lucide-react'
+import { FileText, ArrowLeft, CheckCircle, Loader, BookOpen, Pencil, Upload, Trash2, X } from 'lucide-react'
 import { motion } from 'framer-motion'
 
+const SUPABASE_URL = 'https://ucfoyvjvwqubxqqyzisu.supabase.co/storage/v1/object/public'
+
 const availablePapers = [
-  // 2024
-  { id: 1, title: 'Paper 2 — May/June 2024 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2024%20Jun/0455_s24_qp_21.pdf' },
-  { id: 2, title: 'Paper 2 — May/June 2024 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2024%20Jun/0455_s24_qp_22.pdf' },
-  { id: 3, title: 'Paper 2 — Oct/Nov 2024 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2024%20Nov/0455_w24_qp_21.pdf' },
-  { id: 4, title: 'Paper 2 — Oct/Nov 2024 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2024%20Nov/0455_w24_qp_22.pdf' },
-  // 2023
-  { id: 5, title: 'Paper 2 — Feb/March 2023', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2023%20Mar/0455_m23_qp_22.pdf' },
-  { id: 6, title: 'Paper 2 — May/June 2023 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2023%20Jun/0455_s23_qp_21.pdf' },
-  { id: 7, title: 'Paper 2 — May/June 2023 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2023%20Jun/0455_s23_qp_22.pdf' },
-  { id: 8, title: 'Paper 2 — Oct/Nov 2023 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2023%20Nov/0455_w23_qp_21.pdf' },
-  { id: 9, title: 'Paper 2 — Oct/Nov 2023 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2023%20Nov/0455_w23_qp_22.pdf' },
-  // 2022
-  { id: 10, title: 'Paper 2 — Feb/March 2022', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://ucfoyvjvwqubxqqyzisu.supabase.co/storage/v1/object/public/papers/ECO_1.pdf' },
-  { id: 11, title: 'Paper 2 — May/June 2022 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2022%20Jun/0455_s22_qp_21.pdf' },
-  { id: 12, title: 'Paper 2 — May/June 2022 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2022%20Jun/0455_s22_qp_22.pdf' },
-  { id: 13, title: 'Paper 2 — Oct/Nov 2022 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2022%20Nov/0455_w22_qp_21.pdf' },
-  { id: 14, title: 'Paper 2 — Oct/Nov 2022 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2022%20Nov/0455_w22_qp_22.pdf' },
-  // 2021
-  { id: 15, title: 'Paper 2 — Feb/March 2021', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2021%20Mar/0455_m21_qp_22.pdf' },
-  { id: 16, title: 'Paper 2 — May/June 2021 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2021%20Jun/0455_s21_qp_21.pdf' },
-  { id: 17, title: 'Paper 2 — May/June 2021 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2021%20Jun/0455_s21_qp_22.pdf' },
-  { id: 18, title: 'Paper 2 — Oct/Nov 2021 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2021%20Nov/0455_w21_qp_21.pdf' },
-  { id: 19, title: 'Paper 2 — Oct/Nov 2021 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2021%20Nov/0455_w21_qp_22.pdf' },
-  // 2020
-  { id: 20, title: 'Paper 2 — Feb/March 2020', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2020%20Mar/0455_m20_qp_22.pdf' },
-  { id: 21, title: 'Paper 2 — May/June 2020 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2020%20Jun/0455_s20_qp_21.pdf' },
-  { id: 22, title: 'Paper 2 — May/June 2020 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2020%20Jun/0455_s20_qp_22.pdf' },
-  { id: 23, title: 'Paper 2 — Oct/Nov 2020 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2020%20Nov/0455_w20_qp_21.pdf' },
-  { id: 24, title: 'Paper 2 — Oct/Nov 2020 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2020%20Nov/0455_w20_qp_22.pdf' },
-  // 2019
-  { id: 25, title: 'Paper 2 — Feb/March 2019', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2019%20Mar/0455_m19_qp_22.pdf' },
-  { id: 26, title: 'Paper 2 — May/June 2019 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2019%20Jun/0455_s19_qp_21.pdf' },
-  { id: 27, title: 'Paper 2 — May/June 2019 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2019%20Jun/0455_s19_qp_22.pdf' },
-  { id: 28, title: 'Paper 2 — Oct/Nov 2019 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2019%20Nov/0455_w19_qp_21.pdf' },
-  { id: 29, title: 'Paper 2 — Oct/Nov 2019 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2019%20Nov/0455_w19_qp_22.pdf' },
-  // 2018
-  { id: 30, title: 'Paper 2 — Feb/March 2018', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2018%20Mar/0455_m18_qp_22.pdf' },
-  { id: 31, title: 'Paper 2 — May/June 2018 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2018%20Jun/0455_s18_qp_21.pdf' },
-  { id: 32, title: 'Paper 2 — May/June 2018 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2018%20Jun/0455_s18_qp_22.pdf' },
-  { id: 33, title: 'Paper 2 — Oct/Nov 2018 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2018%20Nov/0455_w18_qp_21.pdf' },
-  { id: 34, title: 'Paper 2 — Oct/Nov 2018 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2018%20Nov/0455_w18_qp_22.pdf' },
-  // 2017
-  { id: 35, title: 'Paper 2 — Feb/March 2017', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2017%20Mar/0455_m17_qp_22.pdf' },
-  { id: 36, title: 'Paper 2 — May/June 2017 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2017%20Jun/0455_s17_qp_21.pdf' },
-  { id: 37, title: 'Paper 2 — May/June 2017 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2017%20Jun/0455_s17_qp_22.pdf' },
-  { id: 38, title: 'Paper 2 — Oct/Nov 2017 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2017%20Nov/0455_w17_qp_21.pdf' },
-  { id: 39, title: 'Paper 2 — Oct/Nov 2017 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2017%20Nov/0455_w17_qp_22.pdf' },
-  // 2016
-  { id: 40, title: 'Paper 2 — Feb/March 2016', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2016%20Mar/0455_m16_qp_22.pdf' },
-  { id: 41, title: 'Paper 2 — May/June 2016 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2016%20Jun/0455_s16_qp_21.pdf' },
-  { id: 42, title: 'Paper 2 — May/June 2016 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2016%20Jun/0455_s16_qp_22.pdf' },
-  { id: 43, title: 'Paper 2 — Oct/Nov 2016 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2016%20Nov/0455_w16_qp_21.pdf' },
-  { id: 44, title: 'Paper 2 — Oct/Nov 2016 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: 'https://pastpapers.papacambridge.com/Cambridge%20International%20Examinations%20(CIE)/IGCSE/Economics%20(0455)/2016%20Nov/0455_w16_qp_22.pdf' },
+  { id: 1,  title: 'Paper 2 — Feb/March 2019', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_m19_qp_22.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_m19_ms_22.pdf` },
+  { id: 2,  title: 'Paper 2 — Feb/March 2020', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_m20_qp_22.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_m20_ms_22.pdf` },
+  { id: 3,  title: 'Paper 2 — Feb/March 2021', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_m21_qp_22.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_m21_ms_22.pdf` },
+  { id: 4,  title: 'Paper 2 — Feb/March 2022', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_m22_qp_22.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_m22_ms_22.pdf` },
+  { id: 5,  title: 'Paper 2 — Feb/March 2023', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_m23_qp_22.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_m23_ms_22.pdf` },
+  { id: 6,  title: 'Paper 2 — Feb/March 2024', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_m24_qp_22.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_m24_ms_22.pdf` },
+  { id: 7,  title: 'Paper 2 — Feb/March 2025', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_m25_qp_22.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_m25_ms_22.pdf` },
+  { id: 8,  title: 'Paper 2 — May/June 2018 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s18_qp_21.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s18_ms_21.pdf` },
+  { id: 9,  title: 'Paper 2 — May/June 2018 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s18_qp_22.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s18_ms_22.pdf` },
+  { id: 10, title: 'Paper 2 — May/June 2018 Variant 3', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s18_qp_23.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s18_ms_23.pdf` },
+  { id: 11, title: 'Paper 2 — May/June 2019 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s19_qp_21.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s19_ms_21.pdf` },
+  { id: 12, title: 'Paper 2 — May/June 2019 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s19_qp_22.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s19_ms_22.pdf` },
+  { id: 13, title: 'Paper 2 — May/June 2019 Variant 3', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s19_qp_23.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s19_ms_23.pdf` },
+  { id: 14, title: 'Paper 2 — May/June 2020 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s20_qp_21.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s20_ms_21.pdf` },
+  { id: 15, title: 'Paper 2 — May/June 2020 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s20_qp_22.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s20_ms_22.pdf` },
+  { id: 16, title: 'Paper 2 — May/June 2020 Variant 3', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s20_qp_23.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s20_ms_23.pdf` },
+  { id: 17, title: 'Paper 2 — May/June 2021 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s21_qp_21.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s21_ms_21.pdf` },
+  { id: 18, title: 'Paper 2 — May/June 2021 Variant 2', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s21_qp_22.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s21_ms_22.pdf` },
+  { id: 19, title: 'Paper 2 — May/June 2021 Variant 3', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s21_qp_23.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s21_ms_23.pdf` },
+  { id: 20, title: 'Paper 2 — May/June 2022 Variant 1', time: '2 hours 15 minutes', totalMarks: 90, pdfUrl: `${SUPABASE_URL}/papers/0455_s22_qp_21.pdf`, msUrl: `${SUPABASE_URL}/markschemes/0455_s22_ms_21.pdf` },
 ]
+
+function DrawingCanvas({ questionNumber, onSave }) {
+  const canvasRef = useRef(null)
+  const [isDrawing, setIsDrawing] = useState(false)
+  const [tool, setTool] = useState('pen')
+  const lastPos = useRef(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.strokeStyle = '#1e1e1e'
+    ctx.lineWidth = 2
+    ctx.lineCap = 'round'
+  }, [])
+
+  const getPos = (e) => {
+    const canvas = canvasRef.current
+    const rect = canvas.getBoundingClientRect()
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    if (e.touches) {
+      return {
+        x: (e.touches[0].clientX - rect.left) * scaleX,
+        y: (e.touches[0].clientY - rect.top) * scaleY
+      }
+    }
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
+    }
+  }
+
+  const startDraw = (e) => {
+    e.preventDefault()
+    setIsDrawing(true)
+    lastPos.current = getPos(e)
+  }
+
+  const draw = (e) => {
+    e.preventDefault()
+    if (!isDrawing) return
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    const pos = getPos(e)
+    ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : '#1e1e1e'
+    ctx.lineWidth = tool === 'eraser' ? 20 : 2
+    ctx.beginPath()
+    ctx.moveTo(lastPos.current.x, lastPos.current.y)
+    ctx.lineTo(pos.x, pos.y)
+    ctx.stroke()
+    lastPos.current = pos
+  }
+
+  const stopDraw = () => {
+    setIsDrawing(false)
+    const canvas = canvasRef.current
+    onSave(questionNumber, canvas.toDataURL())
+  }
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    onSave(questionNumber, null)
+  }
+
+  return (
+    <div className="mt-3">
+      <div className="flex items-center gap-2 mb-2">
+        <button onClick={() => setTool('pen')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 ${tool === 'pen' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+          <Pencil className="w-3 h-3" /> Pen
+        </button>
+        <button onClick={() => setTool('eraser')} className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 ${tool === 'eraser' ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
+          <X className="w-3 h-3" /> Eraser
+        </button>
+        <button onClick={clearCanvas} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-100 text-red-600 flex items-center gap-1 ml-auto">
+          <Trash2 className="w-3 h-3" /> Clear
+        </button>
+      </div>
+      <canvas
+        ref={canvasRef}
+        width={800}
+        height={400}
+        onMouseDown={startDraw}
+        onMouseMove={draw}
+        onMouseUp={stopDraw}
+        onMouseLeave={stopDraw}
+        onTouchStart={startDraw}
+        onTouchMove={draw}
+        onTouchEnd={stopDraw}
+        className="w-full border-2 border-dashed border-purple-300 rounded-xl bg-white cursor-crosshair touch-none"
+        style={{ height: '250px' }}
+      />
+    </div>
+  )
+}
+
+function SourceChart({ graph }) {
+  const canvasRef = useRef(null)
+
+  useEffect(() => {
+    if (!graph?.labels || !graph?.datasets) return
+    let chartInstance = null
+
+    const loadChart = async () => {
+      const { Chart, registerables } = await import('chart.js')
+      Chart.register(...registerables)
+      const canvas = canvasRef.current
+      if (!canvas) return
+      chartInstance = new Chart(canvas, {
+        type: graph.type || 'line',
+        data: {
+          labels: graph.labels,
+          datasets: graph.datasets.map((ds, i) => ({
+            label: ds.label,
+            data: ds.data,
+            borderColor: ds.color || ['#6366f1', '#f59e0b', '#10b981'][i],
+            backgroundColor: (ds.color || ['#6366f1', '#f59e0b', '#10b981'][i]) + '22',
+            tension: 0.3,
+            fill: false,
+            yAxisID: ds.yAxis || 'y'
+          }))
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' },
+            title: { display: true, text: graph.title, font: { size: 13, weight: 'bold' } }
+          },
+          scales: {
+            y: { position: 'left', ticks: { font: { size: 11 } } },
+            ...(graph.datasets.some(d => d.yAxis === 'right') ? {
+              y2: { position: 'right', grid: { drawOnChartArea: false }, ticks: { font: { size: 11 } } }
+            } : {})
+          }
+        }
+      })
+    }
+
+    loadChart()
+    return () => { if (chartInstance) chartInstance.destroy() }
+  }, [graph])
+
+  if (!graph) return null
+
+  return (
+    <div className="bg-white rounded-xl border border-blue-100 p-4 mb-3">
+      <canvas ref={canvasRef} />
+      {graph.graphDescription && (
+        <p className="text-xs text-gray-500 mt-2 italic">{graph.graphDescription}</p>
+      )}
+    </div>
+  )
+}
+
+function QuestionBox({ q, accentColor = 'purple', answers, setAnswers, diagrams, setDiagrams, fileInputRefs, handleSaveDiagram, handlePhotoUpload }) {
+  const [showDiagram, setShowDiagram] = useState(false)
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div className="flex items-start gap-3">
+          <span className={`bg-${accentColor}-100 text-${accentColor}-700 font-black text-sm px-2.5 py-1 rounded-lg flex-shrink-0`}>Q{q.number}</span>
+          <p className="text-gray-800 font-medium leading-relaxed">{q.text}</p>
+        </div>
+        <span className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-full flex-shrink-0">[{q.marks}]</span>
+      </div>
+
+      <textarea
+        value={answers[q.number] || ''}
+        onChange={e => setAnswers(prev => ({ ...prev, [q.number]: e.target.value }))}
+        className="w-full border border-gray-200 rounded-xl p-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-gray-50 resize-none text-sm"
+        rows={q.marks <= 2 ? 3 : q.marks <= 4 ? 5 : q.marks <= 6 ? 7 : 9}
+        placeholder="Write your answer here..."
+      />
+
+      {!showDiagram && !diagrams[q.number] && (
+        <button
+          onClick={() => setShowDiagram(true)}
+          className="mt-3 text-xs text-purple-500 hover:text-purple-700 font-semibold flex items-center gap-1.5 hover:bg-purple-50 px-3 py-1.5 rounded-lg transition">
+          <Pencil className="w-3 h-3" /> + Add Diagram (optional)
+        </button>
+      )}
+
+      {(showDiagram || diagrams[q.number]) && (
+        <div className="mt-4 border-2 border-dashed border-purple-200 rounded-xl p-4 bg-purple-50">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold text-purple-700 flex items-center gap-2">
+              <Pencil className="w-3.5 h-3.5" /> Draw or upload your diagram
+            </p>
+            <button onClick={() => { setShowDiagram(false); setDiagrams(prev => ({ ...prev, [q.number]: null })) }}
+              className="text-xs text-gray-400 hover:text-red-500 font-semibold flex items-center gap-1">
+              <X className="w-3 h-3" /> Remove
+            </button>
+          </div>
+          {diagrams[q.number] ? (
+            <div className="relative">
+              <img src={diagrams[q.number]} alt="diagram" className="w-full rounded-xl border border-purple-200 max-h-64 object-contain bg-white" />
+              <button onClick={() => setDiagrams(prev => ({ ...prev, [q.number]: null }))}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <DrawingCanvas questionNumber={q.number} onSave={handleSaveDiagram} />
+              <div className="flex items-center gap-2 mt-3">
+                <div className="flex-1 h-px bg-purple-200" />
+                <span className="text-xs text-purple-400 font-semibold">OR</span>
+                <div className="flex-1 h-px bg-purple-200" />
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                ref={el => fileInputRefs.current[q.number] = el}
+                onChange={e => handlePhotoUpload(q.number, e)}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRefs.current[q.number]?.click()}
+                className="w-full mt-3 border border-purple-300 text-purple-600 font-semibold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-purple-100 transition">
+                <Upload className="w-4 h-4" /> Upload Photo of Hand-Drawn Graph
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
 export default function Papers() {
   const router = useRouter()
   const [step, setStep] = useState('list')
   const [selectedPaper, setSelectedPaper] = useState(null)
   const [extractedData, setExtractedData] = useState(null)
-  const [extracting, setExtracting] = useState(false)
   const [selectedSectionB, setSelectedSectionB] = useState([])
   const [answers, setAnswers] = useState({})
+  const [diagrams, setDiagrams] = useState({})
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState(null)
   const [error, setError] = useState(null)
+  const fileInputRefs = useRef({})
 
   const handleSelectPaper = async (paper) => {
     setSelectedPaper(paper)
-    setExtracting(true)
     setStep('extracting')
     setError(null)
     try {
       const res = await fetch('/api/extract-paper', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pdfUrl: paper.pdfUrl })
+        body: JSON.stringify({ pdfUrl: paper.pdfUrl, msUrl: paper.msUrl })
       })
       const data = await res.json()
       if (data.error) {
@@ -94,7 +299,6 @@ export default function Papers() {
       setError('Failed to extract paper. Please try again.')
       setStep('list')
     }
-    setExtracting(false)
   }
 
   const toggleSectionB = (qNum) => {
@@ -106,8 +310,22 @@ export default function Papers() {
   const getSelectedQuestions = () => {
     if (!extractedData) return []
     const secA = extractedData.sectionA.questions
-    const secB = extractedData.sectionB.questions.filter(q => selectedSectionB.includes(q.number)).flatMap(q => q.parts)
+    const secB = extractedData.sectionB.questions
+      .filter(q => selectedSectionB.includes(q.number))
+      .flatMap(q => q.parts)
     return [...secA, ...secB]
+  }
+
+  const handleSaveDiagram = (questionNumber, dataUrl) => {
+    setDiagrams(prev => ({ ...prev, [questionNumber]: dataUrl }))
+  }
+
+  const handlePhotoUpload = (questionNumber, e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => setDiagrams(prev => ({ ...prev, [questionNumber]: ev.target.result }))
+    reader.readAsDataURL(file)
   }
 
   const handleSubmit = async () => {
@@ -117,8 +335,9 @@ export default function Papers() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        questions: allQ.map(q => ({ number: q.number, text: q.text, marks: q.marks })),
+        questions: allQ.map(q => ({ number: q.number, text: q.text, marks: q.marks, markScheme: q.markScheme })),
         answers: allQ.map(q => answers[q.number] || ''),
+        diagrams: allQ.map(q => diagrams[q.number] ? '[diagram submitted]' : '[no diagram]'),
         sourceText: extractedData.sourceText
       })
     })
@@ -134,8 +353,34 @@ export default function Papers() {
     setExtractedData(null)
     setSelectedSectionB([])
     setAnswers({})
+    setDiagrams({})
     setResults(null)
     setError(null)
+  }
+
+  const renderSourceText = (text) => {
+    if (!text) return null
+    const lines = text.split('\n').filter(l => l.trim())
+    return (
+      <div className="space-y-2">
+        {lines.map((line, i) => {
+          if (line.includes('|')) {
+            const cells = line.split('|').filter(c => c.trim())
+            const isHeader = !lines[i - 1]?.includes('|')
+            return (
+              <div key={i} className={`grid gap-2 text-sm ${isHeader ? 'font-bold bg-blue-100 rounded-lg px-3 py-2' : 'border-b border-blue-100 px-3 py-1.5'}`}
+                style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }}>
+                {cells.map((cell, j) => <span key={j} className="text-gray-700">{cell.trim()}</span>)}
+              </div>
+            )
+          }
+          if (line.length < 60 && !line.includes('.') && i < 3) {
+            return <p key={i} className="font-bold text-blue-800 text-sm mt-2">{line}</p>
+          }
+          return <p key={i} className="text-gray-700 text-sm leading-relaxed">{line}</p>
+        })}
+      </div>
+    )
   }
 
   if (step === 'extracting') {
@@ -201,13 +446,17 @@ export default function Papers() {
           </div>
         </motion.header>
         <main className="max-w-4xl mx-auto px-6 py-10">
+
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="bg-blue-50 border-l-4 border-blue-400 rounded-2xl p-6 mb-8">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-4">
               <BookOpen className="w-5 h-5 text-blue-600" />
               <h2 className="font-bold text-blue-700">Source Material — Read carefully before answering Section A</h2>
             </div>
-            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm font-mono">{extractedData.sourceText}</p>
+            {renderSourceText(extractedData.sourceText)}
+            {extractedData.graphs?.map((graph, i) => (
+              <SourceChart key={i} graph={graph} />
+            ))}
           </motion.div>
 
           <div className="mb-10">
@@ -215,20 +464,13 @@ export default function Papers() {
               <div className="bg-purple-600 text-white font-bold px-4 py-1.5 rounded-full text-sm">Section A</div>
               <p className="text-gray-500 text-sm">Answer ALL parts of Question 1</p>
             </div>
-            {secAQuestions.map((q, i) => (
-              <motion.div key={q.number} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex items-start gap-3">
-                    <span className="bg-purple-100 text-purple-700 font-black text-sm px-2.5 py-1 rounded-lg flex-shrink-0">Q{q.number}</span>
-                    <p className="text-gray-800 font-medium leading-relaxed">{q.text}</p>
-                  </div>
-                  <span className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-full flex-shrink-0">[{q.marks}]</span>
-                </div>
-                <textarea value={answers[q.number] || ''} onChange={e => setAnswers(prev => ({ ...prev, [q.number]: e.target.value }))}
-                  className="w-full border border-gray-200 rounded-xl p-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-400 bg-gray-50 resize-none text-sm"
-                  rows={q.marks <= 2 ? 3 : q.marks <= 4 ? 5 : q.marks <= 6 ? 7 : 9} placeholder="Write your answer here..." />
-              </motion.div>
+            {secAQuestions.map(q => (
+              <QuestionBox key={q.number} q={q} accentColor="purple"
+                answers={answers} setAnswers={setAnswers}
+                diagrams={diagrams} setDiagrams={setDiagrams}
+                fileInputRefs={fileInputRefs}
+                handleSaveDiagram={handleSaveDiagram}
+                handlePhotoUpload={handlePhotoUpload} />
             ))}
           </div>
 
@@ -243,20 +485,13 @@ export default function Papers() {
                   <p className="text-sm font-bold text-amber-700 mb-2">Question {question.number} — Source Material</p>
                   <p className="text-gray-700 text-sm leading-relaxed">{question.stimulus}</p>
                 </div>
-                {question.parts.map((q, i) => (
-                  <motion.div key={q.number} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                    className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <div className="flex items-start gap-3">
-                        <span className="bg-blue-100 text-blue-700 font-black text-sm px-2.5 py-1 rounded-lg flex-shrink-0">Q{q.number}</span>
-                        <p className="text-gray-800 font-medium leading-relaxed">{q.text}</p>
-                      </div>
-                      <span className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1.5 rounded-full flex-shrink-0">[{q.marks}]</span>
-                    </div>
-                    <textarea value={answers[q.number] || ''} onChange={e => setAnswers(prev => ({ ...prev, [q.number]: e.target.value }))}
-                      className="w-full border border-gray-200 rounded-xl p-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50 resize-none text-sm"
-                      rows={q.marks <= 2 ? 3 : q.marks <= 4 ? 5 : q.marks <= 6 ? 7 : 9} placeholder="Write your answer here..." />
-                  </motion.div>
+                {question.parts.map(q => (
+                  <QuestionBox key={q.number} q={q} accentColor="blue"
+                    answers={answers} setAnswers={setAnswers}
+                    diagrams={diagrams} setDiagrams={setDiagrams}
+                    fileInputRefs={fileInputRefs}
+                    handleSaveDiagram={handleSaveDiagram}
+                    handlePhotoUpload={handlePhotoUpload} />
                 ))}
               </div>
             ))}
@@ -292,7 +527,7 @@ export default function Papers() {
               const isSelected = selectedSectionB.includes(q.number)
               const isDisabled = !isSelected && selectedSectionB.length >= 3
               return (
-                <motion.div key={q.number} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
+                <motion.div key={`secb-${q.number}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
                   onClick={() => !isDisabled && toggleSectionB(q.number)}
                   className={`rounded-2xl border-2 p-6 cursor-pointer transition ${isSelected ? 'border-purple-500 bg-purple-50' : isDisabled ? 'border-gray-100 bg-gray-50 opacity-40 cursor-not-allowed' : 'border-gray-100 bg-white hover:border-purple-300 hover:shadow-md'}`}>
                   <div className="flex items-start gap-4">
@@ -304,7 +539,7 @@ export default function Papers() {
                       <p className={`text-sm leading-relaxed mb-4 ${isSelected ? 'text-purple-700' : 'text-gray-500'}`}>{q.stimulus}</p>
                       <div className="space-y-2">
                         {q.parts.map(p => (
-                          <div key={p.number} className={`flex items-start gap-3 rounded-xl p-3 border ${isSelected ? 'bg-white border-purple-100' : 'bg-gray-50 border-gray-100'}`}>
+                          <div key={`part-${p.number}`} className={`flex items-start gap-3 rounded-xl p-3 border ${isSelected ? 'bg-white border-purple-100' : 'bg-gray-50 border-gray-100'}`}>
                             <span className={`font-black text-xs px-2 py-1 rounded-lg flex-shrink-0 ${isSelected ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-500'}`}>({p.number.slice(-1)})</span>
                             <p className="text-gray-600 text-sm flex-1 leading-relaxed">{p.text}</p>
                             <span className="text-xs text-gray-400 flex-shrink-0 font-semibold">[{p.marks}]</span>

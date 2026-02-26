@@ -37,7 +37,7 @@ export default function Dashboard() {
       desc: 'Practice questions with instant AI-powered feedback',
       btn: 'Start Practicing',
       btnColor: 'bg-green-600 hover:bg-green-700',
-      href: '/questions',
+      href: '/topics',
       progress: { value: 47, total: 100, color: 'bg-green-600' }
     },
     {
